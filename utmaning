@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html lang="sv">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Utmaning">
+<title>Utmaning</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #0a0a0a;
+    --surface: #141414;
+    --border: rgba(255,255,255,0.08);
+    --text: #f0f0f0;
+    --muted: rgba(240,240,240,0.4);
+    --accent: #c8ff00;
+    --accent-dim: rgba(200,255,0,0.12);
+    --success: #00e5a0;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+
+  html, body {
+    height: 100%;
+    background: var(--bg);
+    color: var(--text);
+    font-family: 'DM Sans', sans-serif;
+    overflow: hidden;
+    user-select: none;
+  }
+
+  .app {
+    height: 100%;
+    display: flex;
+    flex-direction: column;
+    padding: env(safe-area-inset-top, 20px) 0 env(safe-area-inset-bottom, 20px);
+    max-width: 430px;
+    margin: 0 auto;
+    cursor: pointer;
+  }
+
+  .top-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 24px 12px;
+    flex-shrink: 0;
+  }
+
+  .app-title {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    letter-spacing: 0.15em;
+    color: var(--muted);
+    text-transform: uppercase;
+  }
+
+  .streak-badge {
+    font-family: 'DM Mono', monospace;
+    font-size: 11px;
+    color: var(--accent);
+    background: var(--accent-dim);
+    border: 1px solid rgba(200,255,0,0.2);
+    border-radius: 20px;
+    padding: 4px 12px;
+    letter-spacing: 0.05em;
+  }
+
+  .main {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    padding: 0 24px;
+    text-align: center;
+  }
+
+  /* IDLE STATE */
+  .idle-hint {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 24px;
+    transition: opacity 0.3s;
+  }
+
+  .idle-circle {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    border: 1px solid rgba(200,255,0,0.2);
+    background: var(--accent-dim);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    animation: pulse 2.5s ease-in-out infinite;
+  }
+
+  .idle-circle svg {
+    width: 40px;
+    height: 40px;
+    stroke: var(--accent);
+    fill: none;
+    stroke-width: 1.5;
+    stroke-linecap: round;
+    stroke-linejoin: round;
+  }
+
+  @keyframes pulse {
+    0%, 100% { transform: scale(1); opacity: 1; }
+    50% { transform: scale(1.05); opacity: 0.7; }
+  }
+
+  .idle-text {
+    font-size: 15px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  /* ACTIVE STATE */
+  .exercise-card {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    width: 100%;
+  }
+
+  .exercise-card.visible { display: flex; }
+
+  .tag {
+    font-family: 'DM Mono', monospace;
+    font-size: 10px;
+    letter-spacing: 0.14em;
+    color: var(--muted);
+    text-transform: uppercase;
+    margin-bottom: 28px;
+  }
+
+  .ex-name {
+    font-size: 28px;
+    font-weight: 500;
+    color: var(--text);
+    margin-bottom: 24px;
+    line-height: 1.2;
+  }
+
+  .ex-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 88px;
+    font-weight: 500;
+    color: var(--accent);
+    line-height: 1;
+    margin-bottom: 8px;
+  }
+
+  .ex-unit {
+    font-size: 13px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.06em;
+    margin-bottom: 28px;
+  }
+
+  .ex-desc {
+    font-size: 13px;
+    color: var(--muted);
+    line-height: 1.7;
+    max-width: 260px;
+  }
+
+  /* TIMER */
+  .timer-wrap {
+    margin-top: 28px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    width: 100%;
+  }
+
+  .timer-display {
+    font-family: 'DM Mono', monospace;
+    font-size: 52px;
+    font-weight: 500;
+    color: var(--text);
+    transition: color 0.3s;
+  }
+
+  .timer-display.running { color: var(--accent); }
+  .timer-display.done { color: var(--success); }
+
+  .timer-controls {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+  }
+
+  .t-adj {
+    background: none;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    color: var(--muted);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    padding: 8px 14px;
+    cursor: pointer;
+  }
+
+  .t-play {
+    background: var(--accent-dim);
+    border: 1px solid rgba(200,255,0,0.3);
+    border-radius: 10px;
+    color: var(--accent);
+    font-size: 13px;
+    font-family: 'DM Mono', monospace;
+    padding: 8px 20px;
+    cursor: pointer;
+    letter-spacing: 0.05em;
+  }
+
+  /* BOTTOM */
+  .bottom {
+    padding: 16px 24px 24px;
+    flex-shrink: 0;
+  }
+
+  .btn-done {
+    width: 100%;
+    padding: 18px;
+    border-radius: 16px;
+    border: none;
+    background: var(--accent);
+    color: #0a0a0a;
+    font-family: 'DM Sans', sans-serif;
+    font-size: 15px;
+    font-weight: 500;
+    cursor: pointer;
+    display: none;
+    transition: transform 0.1s;
+  }
+
+  .btn-done:active { transform: scale(0.98); }
+
+  .tap-hint {
+    text-align: center;
+    font-size: 12px;
+    color: var(--muted);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    padding: 18px 0;
+  }
+
+  /* DONE STATE */
+  .done-view {
+    display: none;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    text-align: center;
+  }
+
+  .done-view.visible { display: flex; }
+
+  .done-number {
+    font-family: 'DM Mono', monospace;
+    font-size: 72px;
+    font-weight: 500;
+    color: var(--success);
+    line-height: 1;
+  }
+
+  .done-label {
+    font-size: 14px;
+    color: var(--muted);
+    letter-spacing: 0.02em;
+  }
+
+  .done-sub {
+    font-size: 12px;
+    color: rgba(240,240,240,0.2);
+    font-family: 'DM Mono', monospace;
+    letter-spacing: 0.08em;
+    margin-top: 8px;
+  }
+
+  @keyframes pop {
+    0% { transform: scale(0.8); opacity: 0; }
+    60% { transform: scale(1.06); }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .pop { animation: pop 0.35s cubic-bezier(0.34,1.56,0.64,1) both; }
+</style>
+</head>
+<body>
+<div class="app" id="app" onclick="handleTap()">
+  <div class="top-bar">
+    <span class="app-title">Utmaning</span>
+    <span class="streak-badge" id="streak-badge">0 idag</span>
+  </div>
+
+  <div class="main">
+    <!-- IDLE -->
+    <div class="idle-hint" id="idle-view">
+      <div class="idle-circle">
+        <svg viewBox="0 0 24 24"><polygon points="5 3 19 12 5 21 5 3"/></svg>
+      </div>
+      <p class="idle-text">tryck var som helst</p>
+    </div>
+
+    <!-- ACTIVE -->
+    <div class="exercise-card" id="active-view">
+      <div class="tag">din utmaning</div>
+      <div class="ex-name" id="ex-name"></div>
+      <div class="ex-number" id="ex-num"></div>
+      <div class="ex-unit" id="ex-unit"></div>
+      <div class="ex-desc" id="ex-desc"></div>
+
+      <div class="timer-wrap" id="timer-wrap" style="display:none">
+        <div class="timer-display" id="timer-disp">0:30</div>
+        <div class="timer-controls" onclick="event.stopPropagation()">
+          <button class="t-adj" onclick="adjTimer(-5)">−5s</button>
+          <button class="t-play" id="t-play-btn" onclick="toggleTimer()">start</button>
+          <button class="t-adj" onclick="adjTimer(5)">+5s</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- DONE -->
+    <div class="done-view" id="done-view">
+      <div class="done-number" id="done-num"></div>
+      <div class="done-label" id="done-label"></div>
+      <div class="done-sub">stäng appen för att återställa</div>
+    </div>
+  </div>
+
+  <div class="bottom">
+    <button class="btn-done" id="btn-done" onclick="event.stopPropagation(); markDone()">Klar — räkna det</button>
+    <div class="tap-hint" id="tap-hint">tryck var som helst för att börja</div>
+  </div>
+</div>
+
+<script>
+const exercises = [
+  {name:"Armhävningar", type:"reps", min:10, max:25, desc:"Bröstet mot golvet, sträck ut armarna helt."},
+  {name:"Squats", type:"reps", min:15, max:40, desc:"Höfter under knäna, håll ryggen rak."},
+  {name:"Utfall", type:"reps", min:10, max:20, desc:"Alternera benen — totalt antal."},
+  {name:"Burpees", type:"reps", min:8, max:15, desc:"Fullt ut — bröstet i golvet, hopp på toppen."},
+  {name:"Sit-ups", type:"reps", min:15, max:35, desc:"Kontrollerat upp och ner, andas ut uppåt."},
+  {name:"Mountain climbers", type:"reps", min:20, max:40, desc:"Höfterna nere, håll tempot uppe."},
+  {name:"Plankan", type:"time", min:20, max:60, desc:"Håll kroppen helt rak, andas lugnt."},
+  {name:"Höga knän", type:"reps", min:20, max:50, desc:"Knäna upp till höfthöjd, springa på stället."},
+  {name:"Triceps dips", type:"reps", min:10, max:20, desc:"Soffkanten eller stolen — armbågarna bakåt."},
+  {name:"Glutebrygga", type:"reps", min:15, max:30, desc:"Ligg på rygg, lyft höfterna, håll 1 sek i toppen."},
+  {name:"Hoppande jack", type:"reps", min:25, max:60, desc:"Fullt rörelseutslag med armarna."},
+  {name:"Diamond push-ups", type:"reps", min:8, max:18, desc:"Händerna nära varandra — tränar triceps hårt."},
+];
+
+let state = "idle"; // idle | active | done
+let streak = 0;
+let timerSec = 30;
+let timerRunning = false;
+let timerInterval = null;
+
+function rnd(min, max) { return Math.floor(Math.random() * (max - min + 1)) + min; }
+function fmt(s) { return Math.floor(s/60) + ":" + String(s%60).padStart(2,"0"); }
+
+function handleTap() {
+  if (state === "idle") startChallenge();
+  // active and done: do nothing on tap (buttons handle it)
+}
+
+function startChallenge() {
+  const ex = exercises[Math.floor(Math.random() * exercises.length)];
+  const val = rnd(ex.min, ex.max);
+
+  document.getElementById('ex-name').textContent = ex.name;
+  document.getElementById('ex-desc').textContent = ex.desc;
+
+  const numEl = document.getElementById('ex-num');
+  numEl.classList.add('pop');
+  setTimeout(() => numEl.classList.remove('pop'), 400);
+
+  if (ex.type === "time") {
+    timerSec = val;
+    numEl.textContent = val;
+    document.getElementById('ex-unit').textContent = "sekunder";
+    document.getElementById('timer-disp').textContent = fmt(val);
+    document.getElementById('timer-disp').className = 'timer-display';
+    document.getElementById('t-play-btn').textContent = 'start';
+    document.getElementById('timer-wrap').style.display = 'flex';
+  } else {
+    numEl.textContent = val;
+    document.getElementById('ex-unit').textContent = "reps";
+    document.getElementById('timer-wrap').style.display = 'none';
+  }
+
+  document.getElementById('idle-view').style.display = 'none';
+  document.getElementById('active-view').classList.add('visible');
+  document.getElementById('done-view').classList.remove('visible');
+  document.getElementById('btn-done').style.display = 'block';
+  document.getElementById('tap-hint').style.display = 'none';
+
+  state = "active";
+}
+
+function adjTimer(d) {
+  if (timerRunning) return;
+  timerSec = Math.max(5, timerSec + d);
+  document.getElementById('timer-disp').textContent = fmt(timerSec);
+  document.getElementById('ex-num').textContent = timerSec;
+}
+
+function toggleTimer() {
+  if (timerRunning) {
+    stopTimer();
+    document.getElementById('t-play-btn').textContent = 'fortsätt';
+    document.getElementById('timer-disp').className = 'timer-display';
+  } else {
+    timerRunning = true;
+    document.getElementById('t-play-btn').textContent = 'pausa';
+    document.getElementById('timer-disp').className = 'timer-display running';
+    timerInterval = setInterval(() => {
+      timerSec--;
+      document.getElementById('timer-disp').textContent = fmt(timerSec);
+      if (timerSec <= 0) {
+        stopTimer();
+        document.getElementById('timer-disp').textContent = "0:00";
+        document.getElementById('timer-disp').className = 'timer-display done';
+        document.getElementById('t-play-btn').textContent = 'klar!';
+      }
+    }, 1000);
+  }
+}
+
+function stopTimer() {
+  timerRunning = false;
+  clearInterval(timerInterval);
+}
+
+function markDone() {
+  stopTimer();
+  streak++;
+
+  const badge = document.getElementById('streak-badge');
+  badge.textContent = streak + " idag";
+  badge.classList.add('pop');
+  setTimeout(() => badge.classList.remove('pop'), 400);
+
+  const doneNum = document.getElementById('done-num');
+  doneNum.textContent = streak;
+  doneNum.classList.add('pop');
+  setTimeout(() => doneNum.classList.remove('pop'), 400);
+
+  document.getElementById('done-label').textContent = streak === 1 ? "utmaning klarad" : "utmaningar klarade";
+
+  document.getElementById('active-view').classList.remove('visible');
+  document.getElementById('done-view').classList.add('visible');
+  document.getElementById('btn-done').style.display = 'none';
+
+  state = "done";
+}
+</script>
+</body>
+</html>
